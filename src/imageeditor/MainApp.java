@@ -6,41 +6,67 @@ import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javafx.application.Application;
+import javafx.beans.InvalidationListener;
+import javafx.beans.Observable;
+import javafx.beans.property.DoubleProperty;
+import javafx.beans.property.SimpleDoubleProperty;
 import javafx.embed.swing.SwingFXUtils;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
-import javafx.scene.Group;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.input.ScrollEvent;
 import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import javax.imageio.ImageIO;
 
 /**
- * @web http://java-buddy.blogspot.com/
+ * Image Editor
  */
 public class MainApp extends Application {
 
-    ImageView myImageView;
+	private ImageView myImageView;
+    private ScrollPane scrollPane = new ScrollPane();
+    final DoubleProperty zoomProperty = new SimpleDoubleProperty(200);
 
     @Override
-    public void start(Stage primaryStage) {
+    public void start(Stage primaryStage) throws Exception {
 
         Button btnLoad = new Button("Open image...");
         btnLoad.setOnAction(btnLoadEventListener);
 
         myImageView = new ImageView();
 
+        zoomProperty.addListener(new InvalidationListener() {
+            @Override
+            public void invalidated(Observable arg0) {
+                myImageView.setFitWidth(zoomProperty.get() * 4);
+                myImageView.setFitHeight(zoomProperty.get() * 3);
+            }
+        });
+
+        scrollPane.addEventFilter(ScrollEvent.ANY, new EventHandler<ScrollEvent>() {
+            @Override
+            public void handle(ScrollEvent event) {
+                if (event.getDeltaY() > 0) {
+                    zoomProperty.set(zoomProperty.get() * 1.1);
+                } else if (event.getDeltaY() < 0) {
+                    zoomProperty.set(zoomProperty.get() / 1.1);
+                }
+            }
+        });
+
         VBox rootBox = new VBox();
-        rootBox.getChildren().addAll(btnLoad);
+        rootBox.getChildren().addAll(btnLoad, scrollPane);
 
-        Group root = new Group();
-        root.getChildren().addAll(myImageView, rootBox);
+        //Group root = new Group();
+        //root.getChildren().addAll(myImageView, rootBox);
 
-        Scene scene = new Scene(root, 600, 300);
+        Scene scene = new Scene(rootBox, 300, 300);
 
         primaryStage.setTitle("Image Editor");
         primaryStage.setScene(scene);
@@ -70,6 +96,8 @@ public class MainApp extends Application {
                 BufferedImage bufferedImage = ImageIO.read(file);
                 Image image = SwingFXUtils.toFXImage(bufferedImage, null);
                 myImageView.setImage(image);
+                myImageView.preserveRatioProperty().set(true);
+                scrollPane.setContent(myImageView);
             } catch (IOException ex) {
                 Logger.getLogger(MainApp.class.getName()).log(Level.SEVERE, null, ex);
             }
