@@ -1,74 +1,79 @@
 package imageeditor;
 
+import java.awt.image.BufferedImage;
+import java.io.File;
 import java.io.IOException;
-
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javafx.application.Application;
-import javafx.fxml.FXMLLoader;
+import javafx.embed.swing.SwingFXUtils;
+import javafx.event.ActionEvent;
+import javafx.event.EventHandler;
+import javafx.scene.Group;
 import javafx.scene.Scene;
-import javafx.scene.layout.AnchorPane;
-import javafx.scene.layout.BorderPane;
+import javafx.scene.control.Button;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
+import javafx.scene.layout.VBox;
+import javafx.stage.FileChooser;
 import javafx.stage.Stage;
+import javax.imageio.ImageIO;
 
+/**
+ * @web http://java-buddy.blogspot.com/
+ */
 public class MainApp extends Application {
 
-    private Stage primaryStage;
-    private BorderPane rootLayout;
+    ImageView myImageView;
 
     @Override
     public void start(Stage primaryStage) {
-        this.primaryStage = primaryStage;
-        this.primaryStage.setTitle("ImageEditor");
 
-        initRootLayout();
+        Button btnLoad = new Button("Open image...");
+        btnLoad.setOnAction(btnLoadEventListener);
 
-        showImageOverview();
-    }
+        myImageView = new ImageView();
 
-    /**
-     * Initializes the root layout.
-     */
-    public void initRootLayout() {
-        try {
-            // Load root layout from fxml file.
-            FXMLLoader loader = new FXMLLoader();
-            loader.setLocation(MainApp.class.getResource("view/RootLayout.fxml"));
-            rootLayout = (BorderPane) loader.load();
+        VBox rootBox = new VBox();
+        rootBox.getChildren().addAll(btnLoad);
 
-            // Show the scene containing the root layout.
-            Scene scene = new Scene(rootLayout);
-            primaryStage.setScene(scene);
-            primaryStage.show();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
+        Group root = new Group();
+        root.getChildren().addAll(myImageView, rootBox);
 
-    /**
-     * Shows the image overview inside the root layout.
-     */
-    public void showImageOverview() {
-        try {
-            // Load image overview.
-            FXMLLoader loader = new FXMLLoader();
-            loader.setLocation(MainApp.class.getResource("view/ImageOverview.fxml"));
-            AnchorPane imageOverview = (AnchorPane) loader.load();
+        Scene scene = new Scene(root, 600, 300);
 
-            // Set image overview into the center of root layout.
-            rootLayout.setCenter(imageOverview);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    /**
-     * Returns the main stage.
-     * @return
-     */
-    public Stage getPrimaryStage() {
-        return primaryStage;
+        primaryStage.setTitle("Image Editor");
+        primaryStage.setScene(scene);
+        primaryStage.show();
     }
 
     public static void main(String[] args) {
         launch(args);
     }
+
+    EventHandler<ActionEvent> btnLoadEventListener
+    = new EventHandler<ActionEvent>(){
+
+        @Override
+        public void handle(ActionEvent t) {
+            FileChooser fileChooser = new FileChooser();
+
+            //Set extension filter
+            FileChooser.ExtensionFilter extFilterJPG = new FileChooser.ExtensionFilter("JPG files (*.jpg)", "*.JPG");
+            FileChooser.ExtensionFilter extFilterPNG = new FileChooser.ExtensionFilter("PNG files (*.png)", "*.PNG");
+            fileChooser.getExtensionFilters().addAll(extFilterJPG, extFilterPNG);
+
+            //Show open file dialog
+            File file = fileChooser.showOpenDialog(null);
+
+            try {
+                BufferedImage bufferedImage = ImageIO.read(file);
+                Image image = SwingFXUtils.toFXImage(bufferedImage, null);
+                myImageView.setImage(image);
+            } catch (IOException ex) {
+                Logger.getLogger(MainApp.class.getName()).log(Level.SEVERE, null, ex);
+            }
+
+        }
+    };
 }

@@ -1,7 +1,12 @@
 package imageeditor;
 
+import java.awt.image.BufferedImage;
 import java.io.File;
+import java.io.IOException;
 
+import javax.imageio.ImageIO;
+
+import javafx.embed.swing.SwingFXUtils;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.MenuItem;
@@ -14,9 +19,9 @@ public class MainController {
 	@FXML
 	private MenuItem imageChooser;
 	@FXML
-	private ImageView imageView;
+	private ImageView imageView = new ImageView();
 
-	public void ImageChooserAction(ActionEvent event){
+	public void ImageChooserAction(ActionEvent event) throws IOException{
 		FileChooser fc = new FileChooser();
 		fc.getExtensionFilters().addAll(
 				new ExtensionFilter("JPG Files", "*.jpg"),
@@ -25,9 +30,13 @@ public class MainController {
 		File selectedFile = fc.showOpenDialog(null);
 
 		if(selectedFile != null){
-			System.out.println("file is valid");
-			Image img = new Image("file:" + selectedFile.getAbsolutePath());
-			imageView.setImage(img);
+			BufferedImage bufferedImage = ImageIO.read(selectedFile);
+            Image image = SwingFXUtils.toFXImage(bufferedImage, null);
+            imageView.setImage(image);
+
+			//System.out.println("file is valid");
+			//Image img = new Image("file:" + selectedFile.getAbsolutePath());
+			//imageView.setImage(img);
 		}else{
 			System.out.println("file is not valid");
 		}
