@@ -19,6 +19,7 @@ import javafx.scene.control.ScrollPane;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.ScrollEvent;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
@@ -36,8 +37,27 @@ public class MainApp extends Application {
     @Override
     public void start(Stage primaryStage) throws Exception {
 
+    	//File options
         Button btnLoad = new Button("Open image...");
         btnLoad.setOnAction(btnLoadEventListener);
+
+        //Add options
+        Button btnAddPoint = new Button("Point");
+        btnAddPoint.setOnAction(btnPointEventListener);
+        Button btnAddTooth = new Button("Tooth");
+        btnAddTooth.setOnAction(btnToothEventListener);
+
+        //Edit options
+        Button btnEditMove = new Button("Move");
+        btnEditMove.setOnAction(btnMoveEventListener);
+        Button btnEditDelete = new Button("Delete");
+        btnEditDelete.setOnAction(btnDeleteEventListener);
+
+        //Size options
+        Button btnSizeDistance = new Button("Distance");
+        btnSizeDistance.setOnAction(btnDistanceEventListener);
+        Button btnSizeAngle = new Button("Angle");
+        btnSizeAngle.setOnAction(btnAngleEventListener);
 
         myImageView = new ImageView();
 
@@ -60,13 +80,30 @@ public class MainApp extends Application {
             }
         });
 
+        //File options
+    	HBox hBoxFile = new HBox();
+    	hBoxFile.getChildren().addAll(btnLoad);
+    	//Add options
+    	HBox hBoxAdd = new HBox(2);
+    	hBoxAdd.getChildren().addAll(btnAddPoint, btnAddTooth);
+    	//Edit options
+    	HBox hBoxEdit = new HBox(2);
+    	hBoxEdit.getChildren().addAll(btnEditMove, btnEditDelete);
+    	//Size options
+    	HBox hBoxSize = new HBox(2);
+    	hBoxSize.getChildren().addAll(btnSizeDistance, btnSizeAngle);
+
+    	//All options
+    	HBox hBoxOption = new HBox(4);
+    	hBoxOption.getChildren().addAll(hBoxFile, hBoxAdd, hBoxEdit, hBoxSize);
+
         VBox rootBox = new VBox();
-        rootBox.getChildren().addAll(btnLoad, scrollPane);
+        rootBox.getChildren().addAll(hBoxOption, scrollPane);
 
         //Group root = new Group();
         //root.getChildren().addAll(myImageView, rootBox);
 
-        Scene scene = new Scene(rootBox, 300, 300);
+        Scene scene = new Scene(rootBox, 600, 300);
 
         primaryStage.setTitle("Image Editor");
         primaryStage.setScene(scene);
@@ -101,6 +138,60 @@ public class MainApp extends Application {
                 Logger.getLogger(MainApp.class.getName()).log(Level.SEVERE, null, ex);
             }
 
+        }
+    };
+
+    EventHandler<ActionEvent> btnPointEventListener
+    = new EventHandler<ActionEvent>(){
+
+        @Override
+        public void handle(ActionEvent t) {
+            System.out.println("Poner punto");
+        }
+    };
+
+    EventHandler<ActionEvent> btnToothEventListener
+    = new EventHandler<ActionEvent>(){
+
+        @Override
+        public void handle(ActionEvent t) {
+            System.out.println("Poner muela");
+        }
+    };
+
+    EventHandler<ActionEvent> btnMoveEventListener
+    = new EventHandler<ActionEvent>(){
+
+        @Override
+        public void handle(ActionEvent t) {
+            System.out.println("Mover objeto");
+        }
+    };
+
+    EventHandler<ActionEvent> btnDeleteEventListener
+    = new EventHandler<ActionEvent>(){
+
+        @Override
+        public void handle(ActionEvent t) {
+            System.out.println("Borrar objeto");
+        }
+    };
+
+    EventHandler<ActionEvent> btnDistanceEventListener
+    = new EventHandler<ActionEvent>(){
+
+        @Override
+        public void handle(ActionEvent t) {
+            System.out.println("Distancia");
+        }
+    };
+
+    EventHandler<ActionEvent> btnAngleEventListener
+    = new EventHandler<ActionEvent>(){
+
+        @Override
+        public void handle(ActionEvent t) {
+            System.out.println("Angulo");
         }
     };
 }
