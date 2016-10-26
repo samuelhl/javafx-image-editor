@@ -61,6 +61,9 @@ public class MainApp extends Application {
 
         myImageView = new ImageView();
 
+        //ScrollPane size
+        scrollPane.setPrefSize(2048, 2048);
+
         zoomProperty.addListener(new InvalidationListener() {
             @Override
             public void invalidated(Observable arg0) {
@@ -81,23 +84,23 @@ public class MainApp extends Application {
         });
 
         //File options
-    	HBox hBoxFile = new HBox();
+    	HBox hBoxFile = new HBox(5);
     	hBoxFile.getChildren().addAll(btnLoad);
     	//Add options
-    	HBox hBoxAdd = new HBox(2);
+    	HBox hBoxAdd = new HBox(5);
     	hBoxAdd.getChildren().addAll(btnAddPoint, btnAddTooth);
     	//Edit options
-    	HBox hBoxEdit = new HBox(2);
+    	HBox hBoxEdit = new HBox(5);
     	hBoxEdit.getChildren().addAll(btnEditMove, btnEditDelete);
     	//Size options
-    	HBox hBoxSize = new HBox(2);
+    	HBox hBoxSize = new HBox(5);
     	hBoxSize.getChildren().addAll(btnSizeDistance, btnSizeAngle);
 
     	//All options
-    	HBox hBoxOption = new HBox(4);
+    	HBox hBoxOption = new HBox(10);
     	hBoxOption.getChildren().addAll(hBoxFile, hBoxAdd, hBoxEdit, hBoxSize);
 
-        VBox rootBox = new VBox();
+        VBox rootBox = new VBox(20);
         rootBox.getChildren().addAll(hBoxOption, scrollPane);
 
         //Group root = new Group();
