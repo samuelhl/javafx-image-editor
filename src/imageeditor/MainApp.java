@@ -33,6 +33,12 @@ public class MainApp extends Application {
 	private ImageView myImageView;
     private ScrollPane scrollPane = new ScrollPane();
     final DoubleProperty zoomProperty = new SimpleDoubleProperty(200);
+    boolean chooseAddPoint = false;
+    boolean chooseAddTooth = false;
+    boolean chooseMove = false;
+    boolean chooseDelete = false;
+    boolean chooseSizeDistance = false;
+    boolean chooseSizeAngle = false;
 
     @Override
     public void start(Stage primaryStage) throws Exception {
@@ -150,6 +156,12 @@ public class MainApp extends Application {
         @Override
         public void handle(ActionEvent t) {
             System.out.println("Poner punto");
+            chooseAddPoint = true;
+            chooseAddTooth = false;
+            chooseMove = false;
+            chooseDelete = false;
+            chooseSizeDistance = false;
+            chooseSizeAngle = false;
         }
     };
 
@@ -159,6 +171,12 @@ public class MainApp extends Application {
         @Override
         public void handle(ActionEvent t) {
             System.out.println("Poner muela");
+            chooseAddPoint = false;
+            chooseAddTooth = true;
+            chooseMove = false;
+            chooseDelete = false;
+            chooseSizeDistance = false;
+            chooseSizeAngle = false;
         }
     };
 
@@ -168,6 +186,12 @@ public class MainApp extends Application {
         @Override
         public void handle(ActionEvent t) {
             System.out.println("Mover objeto");
+            chooseAddPoint = false;
+            chooseAddTooth = false;
+            chooseMove = true;
+            chooseDelete = false;
+            chooseSizeDistance = false;
+            chooseSizeAngle = false;
         }
     };
 
@@ -177,6 +201,12 @@ public class MainApp extends Application {
         @Override
         public void handle(ActionEvent t) {
             System.out.println("Borrar objeto");
+            chooseAddPoint = false;
+            chooseAddTooth = false;
+            chooseMove = false;
+            chooseDelete = true;
+            chooseSizeDistance = false;
+            chooseSizeAngle = false;
         }
     };
 
@@ -186,6 +216,12 @@ public class MainApp extends Application {
         @Override
         public void handle(ActionEvent t) {
             System.out.println("Distancia");
+            chooseAddPoint = false;
+            chooseAddTooth = false;
+            chooseMove = false;
+            chooseDelete = false;
+            chooseSizeDistance = true;
+            chooseSizeAngle = false;
         }
     };
 
@@ -195,6 +231,12 @@ public class MainApp extends Application {
         @Override
         public void handle(ActionEvent t) {
             System.out.println("Angulo");
+            chooseAddPoint = false;
+            chooseAddTooth = false;
+            chooseMove = false;
+            chooseDelete = false;
+            chooseSizeDistance = false;
+            chooseSizeAngle = true;
         }
     };
 }
