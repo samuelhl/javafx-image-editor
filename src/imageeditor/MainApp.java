@@ -13,11 +13,15 @@ import javafx.beans.property.SimpleDoubleProperty;
 import javafx.embed.swing.SwingFXUtils;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
+import javafx.scene.Group;
+import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.input.MouseButton;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.input.ScrollEvent;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
@@ -39,6 +43,7 @@ public class MainApp extends Application {
     boolean chooseDelete = false;
     boolean chooseSizeDistance = false;
     boolean chooseSizeAngle = false;
+    Group root;
 
     @Override
     public void start(Stage primaryStage) throws Exception {
@@ -109,10 +114,27 @@ public class MainApp extends Application {
         VBox rootBox = new VBox(20);
         rootBox.getChildren().addAll(hBoxOption, scrollPane);
 
-        //Group root = new Group();
-        //root.getChildren().addAll(myImageView, rootBox);
+        this.root = new Group();
+        Group pointGroup = new Group();
+        root.getChildren().addAll(myImageView, pointGroup);
 
         Scene scene = new Scene(rootBox, 600, 300);
+        // IMPORTANT EVENT HANDLER
+        scene.addEventHandler(MouseEvent.MOUSE_CLICKED, (MouseEvent e) -> {
+            if (e.getButton().equals(MouseButton.PRIMARY)) {
+            	if (this.chooseAddPoint) {
+            		Point point = new Point(e, pointGroup);
+            	} else if (this.chooseAddTooth) {
+            		// AÑADIR ICONO DE MUELA
+            	} else if (this.chooseMove) {
+            		//
+            	} else if (this.chooseSizeDistance) {
+            		// SELECCIONAR DOS PUNTOS Y CALCULAR DISTANCIA
+            	} else if (this.chooseSizeAngle) {
+            		// SELECCIONAR TRES PUNTOS Y CALCULAR ÁNGULO
+            	}
+            }
+        });
 
         primaryStage.setTitle("Image Editor");
         primaryStage.setScene(scene);
@@ -142,7 +164,7 @@ public class MainApp extends Application {
                 Image image = SwingFXUtils.toFXImage(bufferedImage, null);
                 myImageView.setImage(image);
                 myImageView.preserveRatioProperty().set(true);
-                scrollPane.setContent(myImageView);
+                scrollPane.setContent(root);
             } catch (IOException ex) {
                 Logger.getLogger(MainApp.class.getName()).log(Level.SEVERE, null, ex);
             }
