@@ -3,6 +3,8 @@ package imageeditor;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javafx.application.Application;
@@ -14,7 +16,6 @@ import javafx.embed.swing.SwingFXUtils;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.scene.Group;
-import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.ScrollPane;
@@ -32,21 +33,28 @@ import javax.imageio.ImageIO;
 /**
  * Image Editor
  */
-public class MainApp extends Application {
-
+public class MainApp extends Application
+{
+	private int ang = 0;
+	private double fixedImageWidth = 500;
 	private ImageView myImageView;
     private ScrollPane scrollPane = new ScrollPane();
-    final DoubleProperty zoomProperty = new SimpleDoubleProperty(200);
+    final DoubleProperty zoomProperty = new SimpleDoubleProperty(fixedImageWidth/4);
     boolean chooseAddPoint = false;
     boolean chooseAddTooth = false;
-    boolean chooseMove = false;
+    boolean chooseRotate = false;
     boolean chooseDelete = false;
     boolean chooseSizeDistance = false;
     boolean chooseSizeAngle = false;
     Group root;
+    List<Tooth> toothList = new ArrayList<Tooth>();
+    double imageOriginalWidth, imageOriginalHeight, fixedImageHeight;
+    Button btnLessAngle = new Button("-");
+    Button btnMoreAngle = new Button("+");
 
     @Override
-    public void start(Stage primaryStage) throws Exception {
+    public void start(Stage primaryStage) throws Exception
+    {
 
     	//File options
         Button btnLoad = new Button("Open image...");
@@ -59,8 +67,8 @@ public class MainApp extends Application {
         btnAddTooth.setOnAction(btnToothEventListener);
 
         //Edit options
-        Button btnEditMove = new Button("Move");
-        btnEditMove.setOnAction(btnMoveEventListener);
+        Button btnEditRotate = new Button("Rotate");
+        btnEditRotate.setOnAction(btnMoveEventListener);
         Button btnEditDelete = new Button("Delete");
         btnEditDelete.setOnAction(btnDeleteEventListener);
 
@@ -70,29 +78,15 @@ public class MainApp extends Application {
         Button btnSizeAngle = new Button("Angle");
         btnSizeAngle.setOnAction(btnAngleEventListener);
 
+        //Rotate control
+        btnLessAngle.setPrefWidth(25);
+        btnLessAngle.setDisable(true);
+        btnLessAngle.setOnAction(btnLessAngEventListener);
+        btnMoreAngle.setPrefWidth(25);
+        btnMoreAngle.setDisable(true);
+        btnMoreAngle.setOnAction(btnMoreAngEventListener);
+
         myImageView = new ImageView();
-
-        //ScrollPane size
-        scrollPane.setPrefSize(2048, 2048);
-
-        zoomProperty.addListener(new InvalidationListener() {
-            @Override
-            public void invalidated(Observable arg0) {
-                myImageView.setFitWidth(zoomProperty.get() * 4);
-                myImageView.setFitHeight(zoomProperty.get() * 3);
-            }
-        });
-
-        scrollPane.addEventFilter(ScrollEvent.ANY, new EventHandler<ScrollEvent>() {
-            @Override
-            public void handle(ScrollEvent event) {
-                if (event.getDeltaY() > 0) {
-                    zoomProperty.set(zoomProperty.get() * 1.1);
-                } else if (event.getDeltaY() < 0) {
-                    zoomProperty.set(zoomProperty.get() / 1.1);
-                }
-            }
-        });
 
         //File options
     	HBox hBoxFile = new HBox(5);
@@ -102,31 +96,87 @@ public class MainApp extends Application {
     	hBoxAdd.getChildren().addAll(btnAddPoint, btnAddTooth);
     	//Edit options
     	HBox hBoxEdit = new HBox(5);
-    	hBoxEdit.getChildren().addAll(btnEditMove, btnEditDelete);
+    	hBoxEdit.getChildren().addAll(btnEditRotate, btnEditDelete);
     	//Size options
     	HBox hBoxSize = new HBox(5);
     	hBoxSize.getChildren().addAll(btnSizeDistance, btnSizeAngle);
+    	//Rotate control
+    	HBox hBoxAngle = new HBox(5);
+    	hBoxAngle.getChildren().addAll(btnLessAngle, btnMoreAngle);
 
     	//All options
     	HBox hBoxOption = new HBox(10);
-    	hBoxOption.getChildren().addAll(hBoxFile, hBoxAdd, hBoxEdit, hBoxSize);
+    	hBoxOption.getChildren().addAll(hBoxFile, hBoxAdd, hBoxEdit, hBoxSize, hBoxAngle);
 
         VBox rootBox = new VBox(20);
         rootBox.getChildren().addAll(hBoxOption, scrollPane);
 
         this.root = new Group();
+        Group toothGroup = new Group();
         Group pointGroup = new Group();
-        root.getChildren().addAll(myImageView, pointGroup);
+        root.getChildren().addAll(myImageView, pointGroup, toothGroup);
 
         Scene scene = new Scene(rootBox, 600, 300);
+
+        //ScrollPane size
+        scrollPane.setPrefSize(1024,1024);
+        scrollPane.setStyle("-fx-background-color:transparent;");
+
+        zoomProperty.addListener(new InvalidationListener()
+        {
+            @Override
+            public void invalidated(Observable arg0)
+            {
+            	fixedImageWidth= (zoomProperty.get() * 4);
+                fixedImageHeight = Utils.ComputeRatio(imageOriginalWidth, imageOriginalHeight, fixedImageWidth);
+                if 	(!chooseRotate)
+                {
+                myImageView.setFitWidth(fixedImageWidth);
+                myImageView.setFitHeight(fixedImageHeight);
+                }
+
+                for(Tooth t : toothList)
+                {
+                	ImageView imgV = t.getImageView();
+                	if 	(!chooseRotate)
+                	{
+                	imgV.setFitWidth(Utils.ComputeRatio(imageOriginalWidth, fixedImageWidth, t.getOriginalToothWidth()));
+                	imgV.setFitHeight(Utils.ComputeRatio(imageOriginalHeight, fixedImageHeight, t.getOriginalToothHeight()));
+                	imgV.setLayoutX(Utils.ComputeRatio(t.getOriginalImageWidth(), fixedImageWidth, t.getOriginalToothX()));
+                	imgV.setLayoutY(Utils.ComputeRatio(t.getOriginalImageHeight(), fixedImageHeight, t.getOriginalToothY()));
+                	}
+                	else
+                	imgV.setRotate(ang);
+                }
+            }
+        });
+
+        scrollPane.addEventFilter(ScrollEvent.ANY, new EventHandler<ScrollEvent>()
+        {
+            @Override
+            public void handle(ScrollEvent event) {
+                if (event.getDeltaY() > 0) {
+                    zoomProperty.set(zoomProperty.get() * 1.1);
+                    ang+=10;
+                } else if (event.getDeltaY() < 0) {
+                    zoomProperty.set(zoomProperty.get() / 1.1);
+                    ang-=10;
+                }
+            }
+        });
+
         // IMPORTANT EVENT HANDLER
-        scene.addEventHandler(MouseEvent.MOUSE_CLICKED, (MouseEvent e) -> {
-            if (e.getButton().equals(MouseButton.PRIMARY)) {
+        scene.addEventHandler(MouseEvent.MOUSE_RELEASED, (MouseEvent e) ->
+        {
+        	boolean dragUndetected = e.isDragDetect();
+        	if (e.getButton().equals(MouseButton.PRIMARY) && dragUndetected)
+        	{
             	if (this.chooseAddPoint) {
             		Point point = new Point(e, pointGroup);
             	} else if (this.chooseAddTooth) {
-            		// AÑADIR ICONO DE MUELA
-            	} else if (this.chooseMove) {
+            		Tooth tooth = new Tooth(this, e, toothGroup);
+            		toothList.add(tooth);
+            	} else if (this.chooseRotate) {
             		//
             	} else if (this.chooseSizeDistance) {
             		// SELECCIONAR DOS PUNTOS Y CALCULAR DISTANCIA
@@ -141,15 +191,36 @@ public class MainApp extends Application {
         primaryStage.show();
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args)
+    {
         launch(args);
     }
 
-    EventHandler<ActionEvent> btnLoadEventListener
-    = new EventHandler<ActionEvent>(){
+    public double getFixedImageWidth()
+    {
+    	return fixedImageWidth;
+    }
 
+    public double getFixedImageHeight()
+    {
+    	return fixedImageHeight;
+    }
+
+    public double getOriginalImageWidth()
+    {
+    	return imageOriginalWidth;
+    }
+
+    public double getOriginalImageHeight()
+    {
+    	return imageOriginalHeight;
+    }
+
+    EventHandler<ActionEvent> btnLoadEventListener = new EventHandler<ActionEvent>()
+    {
         @Override
-        public void handle(ActionEvent t) {
+        public void handle(ActionEvent t)
+        {
             FileChooser fileChooser = new FileChooser();
 
             //Set extension filter
@@ -159,106 +230,133 @@ public class MainApp extends Application {
             //Show open file dialog
             File file = fileChooser.showOpenDialog(null);
 
-            try {
+            try
+            {
                 BufferedImage bufferedImage = ImageIO.read(file);
                 Image image = SwingFXUtils.toFXImage(bufferedImage, null);
+                imageOriginalWidth = image.getWidth();
+                imageOriginalHeight = image.getHeight();
+
                 myImageView.setImage(image);
                 myImageView.preserveRatioProperty().set(true);
+                myImageView.setFitWidth(fixedImageWidth);
+                fixedImageHeight = Utils.ComputeRatio(imageOriginalWidth, imageOriginalHeight, fixedImageWidth);
+                myImageView.setFitHeight(fixedImageHeight);
                 scrollPane.setContent(root);
-            } catch (IOException ex) {
+                System.out.println(fixedImageWidth + " ; " + fixedImageHeight);
+            } catch (IOException ex)
+            {
                 Logger.getLogger(MainApp.class.getName()).log(Level.SEVERE, null, ex);
             }
 
         }
     };
 
-    EventHandler<ActionEvent> btnPointEventListener
-    = new EventHandler<ActionEvent>(){
-
+    EventHandler<ActionEvent> btnPointEventListener = new EventHandler<ActionEvent>()
+    {
         @Override
-        public void handle(ActionEvent t) {
+        public void handle(ActionEvent t)
+        {
             System.out.println("Poner punto");
             chooseAddPoint = true;
             chooseAddTooth = false;
-            chooseMove = false;
+            chooseRotate = false;
             chooseDelete = false;
             chooseSizeDistance = false;
             chooseSizeAngle = false;
         }
     };
 
-    EventHandler<ActionEvent> btnToothEventListener
-    = new EventHandler<ActionEvent>(){
-
+    EventHandler<ActionEvent> btnToothEventListener = new EventHandler<ActionEvent>()
+    {
         @Override
-        public void handle(ActionEvent t) {
+        public void handle(ActionEvent t)
+        {
             System.out.println("Poner muela");
             chooseAddPoint = false;
             chooseAddTooth = true;
-            chooseMove = false;
+            chooseRotate = false;
             chooseDelete = false;
             chooseSizeDistance = false;
             chooseSizeAngle = false;
         }
     };
 
-    EventHandler<ActionEvent> btnMoveEventListener
-    = new EventHandler<ActionEvent>(){
-
+    EventHandler<ActionEvent> btnMoveEventListener = new EventHandler<ActionEvent>()
+    {
         @Override
-        public void handle(ActionEvent t) {
-            System.out.println("Mover objeto");
+        public void handle(ActionEvent t)
+        {
+            System.out.println("Rotar objeto");
+            btnLessAngle.setDisable(false);
+            btnMoreAngle.setDisable(false);
             chooseAddPoint = false;
             chooseAddTooth = false;
-            chooseMove = true;
+            chooseRotate = true;
             chooseDelete = false;
             chooseSizeDistance = false;
             chooseSizeAngle = false;
         }
     };
 
-    EventHandler<ActionEvent> btnDeleteEventListener
-    = new EventHandler<ActionEvent>(){
-
+    EventHandler<ActionEvent> btnDeleteEventListener = new EventHandler<ActionEvent>()
+    {
         @Override
         public void handle(ActionEvent t) {
             System.out.println("Borrar objeto");
             chooseAddPoint = false;
             chooseAddTooth = false;
-            chooseMove = false;
+            chooseRotate = false;
             chooseDelete = true;
             chooseSizeDistance = false;
             chooseSizeAngle = false;
         }
     };
 
-    EventHandler<ActionEvent> btnDistanceEventListener
-    = new EventHandler<ActionEvent>(){
-
+    EventHandler<ActionEvent> btnDistanceEventListener = new EventHandler<ActionEvent>()
+    {
         @Override
         public void handle(ActionEvent t) {
             System.out.println("Distancia");
             chooseAddPoint = false;
             chooseAddTooth = false;
-            chooseMove = false;
+            chooseRotate = false;
             chooseDelete = false;
             chooseSizeDistance = true;
             chooseSizeAngle = false;
         }
     };
 
-    EventHandler<ActionEvent> btnAngleEventListener
-    = new EventHandler<ActionEvent>(){
-
+    EventHandler<ActionEvent> btnAngleEventListener = new EventHandler<ActionEvent>()
+    {
         @Override
-        public void handle(ActionEvent t) {
+        public void handle(ActionEvent t)
+        {
             System.out.println("Angulo");
             chooseAddPoint = false;
             chooseAddTooth = false;
-            chooseMove = false;
+            chooseRotate = false;
             chooseDelete = false;
             chooseSizeDistance = false;
             chooseSizeAngle = true;
+        }
+    };
+
+    EventHandler<ActionEvent> btnLessAngEventListener = new EventHandler<ActionEvent>()
+    {
+        @Override
+        public void handle(ActionEvent t)
+        {
+
+        }
+    };
+
+    EventHandler<ActionEvent> btnMoreAngEventListener = new EventHandler<ActionEvent>()
+    {
+        @Override
+        public void handle(ActionEvent t)
+        {
+
         }
     };
 }
