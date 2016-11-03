@@ -30,7 +30,7 @@ public class Tooth {
 	public Tooth(MainApp mainApp, MouseEvent e, Group toothGroup)
 	{
 		this.mainApp = mainApp;
-		File file = new File("C:/Users/Berna/OneDrive/Documents/GitHub/javafx-image-editor/resources/diente.png");
+		File file = new File("resources\\diente.png");
 	    BufferedImage bufferedImage = null;
 
 		try
