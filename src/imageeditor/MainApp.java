@@ -19,6 +19,7 @@ import javafx.scene.Group;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.ScrollPane;
+import javafx.scene.control.TextField;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.MouseButton;
@@ -26,37 +27,41 @@ import javafx.scene.input.MouseEvent;
 import javafx.scene.input.ScrollEvent;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
+import javafx.scene.shape.Circle;
+import javafx.scene.shape.Line;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import javax.imageio.ImageIO;
-
-import org.math.plot.Plot2DPanel;
 
 /**
  * Image Editor
  */
 public class MainApp extends Application
 {
-	private int ang = 0;
+	private double getDeltaY = 0;
 	private int i = 0;
 	private double fixedImageWidth = 500;
 	private ImageView myImageView;
     private ScrollPane scrollPane = new ScrollPane();
-    final DoubleProperty zoomProperty = new SimpleDoubleProperty(fixedImageWidth/4);
-    boolean chooseAddPoint = false;
-    boolean chooseAddTooth = false;
-    boolean chooseAddContour = false;
-    boolean chooseRotate = false;
-    boolean chooseDelete = false;
-    boolean chooseSizeDistance = false;
-    boolean chooseSizeAngle = false;
-    Group root;
-    List<Tooth> toothList = new ArrayList<Tooth>();
-    List<Point> pointListContour = new ArrayList<Point>();
-    double imageOriginalWidth, imageOriginalHeight, fixedImageHeight;
-    Button btnLessAngle = new Button("-");
-    Button btnMoreAngle = new Button("+");
-    Group contourGroup = new Group();
+    private final DoubleProperty zoomProperty = new SimpleDoubleProperty(fixedImageWidth/4);
+    private boolean chooseAddPoint = false;
+    private boolean chooseAddTooth = false;
+    private boolean chooseAddToothS = false;
+    private boolean chooseAddMolar = false;
+    private boolean chooseAddMolarS = false;
+    private boolean chooseAddContour = false;
+    private boolean chooseRotate = false;
+    private boolean chooseSizeDistance = false;
+    private boolean chooseSizeAngle = false;
+    private Group root;
+    private List<DentalPiece> dentalPieceList = new ArrayList<DentalPiece>();
+    private List<Point> pointsList = new ArrayList<Point>();
+    private List<Point> pointsToComputeDistance = new ArrayList<Point>();
+    private List<Point> pointsToComputeAngle = new ArrayList<Point>();
+    private List<Point> pointListContour = new ArrayList<Point>();
+    private double imageOriginalWidth, imageOriginalHeight, fixedImageHeight;
+    private TextField TextDistance = new TextField();
+    private TextField TextAngle = new TextField();
 
     @Override
     public void start(Stage primaryStage) throws Exception
@@ -69,30 +74,38 @@ public class MainApp extends Application
         //Add options
         Button btnAddPoint = new Button("Point");
         btnAddPoint.setOnAction(btnPointEventListener);
+
         Button btnAddTooth = new Button("Tooth");
+        btnAddTooth.setStyle("-fx-background-image: url('src\\image\\diente.png')");
         btnAddTooth.setOnAction(btnToothEventListener);
+
+        Button btnAddToothS = new Button("Upper Tooth");
+        btnAddToothS.setStyle("-fx-background-image: url('src\\image\\diente.png')");
+        btnAddToothS.setOnAction(btnToothSEventListener);
+
+        Button btnAddMolar = new Button("Molar");
+        btnAddMolar.setStyle("-fx-background-image: url('src\\image\\molar.png')");
+        btnAddMolar.setOnAction(btnMolarEventListener);
+
+        Button btnAddMolarS = new Button("Upper Molar");
+        btnAddMolarS.setStyle("-fx-background-image: url('src\\image\\molar.png')");
+        btnAddMolarS.setOnAction(btnMolarSEventListener);
+
         Button btnAddContour = new Button("Contour");
         btnAddContour.setOnAction(btnContourEventListener);
 
         //Edit options
         Button btnEditRotate = new Button("Rotate");
         btnEditRotate.setOnAction(btnMoveEventListener);
-        Button btnEditDelete = new Button("Delete");
-        btnEditDelete.setOnAction(btnDeleteEventListener);
 
         //Size options
         Button btnSizeDistance = new Button("Distance");
+        TextDistance.setPrefWidth(50);
         btnSizeDistance.setOnAction(btnDistanceEventListener);
-        Button btnSizeAngle = new Button("Angle");
-        btnSizeAngle.setOnAction(btnAngleEventListener);
 
-        //Rotate control
-        btnLessAngle.setPrefWidth(25);
-        btnLessAngle.setDisable(true);
-        btnLessAngle.setOnAction(btnLessAngEventListener);
-        btnMoreAngle.setPrefWidth(25);
-        btnMoreAngle.setDisable(true);
-        btnMoreAngle.setOnAction(btnMoreAngEventListener);
+        Button btnSizeAngle = new Button("Angle");
+        TextAngle.setPrefWidth(50);
+        btnSizeAngle.setOnAction(btnAngleEventListener);
 
         myImageView = new ImageView();
 
@@ -101,31 +114,30 @@ public class MainApp extends Application
     	hBoxFile.getChildren().addAll(btnLoad);
     	//Add options
     	HBox hBoxAdd = new HBox(5);
-    	hBoxAdd.getChildren().addAll(btnAddPoint, btnAddTooth, btnAddContour);
+    	hBoxAdd.getChildren().addAll(btnAddPoint, btnAddTooth, btnAddToothS, btnAddMolar, btnAddMolarS, btnAddContour);
     	//Edit options
     	HBox hBoxEdit = new HBox(5);
-    	hBoxEdit.getChildren().addAll(btnEditRotate, btnEditDelete);
+    	hBoxEdit.getChildren().addAll(btnEditRotate);
     	//Size options
     	HBox hBoxSize = new HBox(5);
-    	hBoxSize.getChildren().addAll(btnSizeDistance, btnSizeAngle);
-    	//Rotate control
-    	HBox hBoxAngle = new HBox(5);
-    	hBoxAngle.getChildren().addAll(btnLessAngle, btnMoreAngle);
+    	hBoxSize.getChildren().addAll(btnSizeDistance, TextDistance, btnSizeAngle, TextAngle);
 
     	//All options
     	HBox hBoxOption = new HBox(10);
-    	hBoxOption.getChildren().addAll(hBoxFile, hBoxAdd, hBoxEdit, hBoxSize, hBoxAngle);
+    	hBoxOption.getChildren().addAll(hBoxFile, hBoxAdd, hBoxEdit, hBoxSize);
 
         VBox rootBox = new VBox(20);
         rootBox.getChildren().addAll(hBoxOption, scrollPane);
 
         this.root = new Group();
         Group toothGroup = new Group();
+        Group molarGroup = new Group();
         Group pointGroup = new Group();
+        Group contourGroup = new Group();
+        Group lines = new Group();
+        root.getChildren().addAll(myImageView, pointGroup, toothGroup, molarGroup, contourGroup, lines);
 
-        root.getChildren().addAll(myImageView, pointGroup, toothGroup, contourGroup);
-
-        Scene scene = new Scene(rootBox, 600, 300);
+        Scene scene = new Scene(rootBox, 800, 500);
 
         //ScrollPane size
         scrollPane.setPrefSize(1024,1024);
@@ -136,40 +148,71 @@ public class MainApp extends Application
             @Override
             public void invalidated(Observable arg0)
             {
-            	fixedImageWidth= (zoomProperty.get() * 4);
-                fixedImageHeight = Utils.ComputeRatio(imageOriginalWidth, imageOriginalHeight, fixedImageWidth);
-                if 	(!chooseRotate)
+                if  (!chooseRotate)
                 {
-                myImageView.setFitWidth(fixedImageWidth);
-                myImageView.setFitHeight(fixedImageHeight);
+                    fixedImageWidth= (zoomProperty.get() * 4);
+                    fixedImageHeight = Utils.ComputeRatio(imageOriginalWidth, imageOriginalHeight, fixedImageWidth);
+
+                    myImageView.setFitWidth(fixedImageWidth);
+                    myImageView.setFitHeight(fixedImageHeight);
+                }
+                else
+                    zoomProperty.set(fixedImageWidth/4);
+
+                for(DentalPiece t : dentalPieceList)
+                {
+
+                    ImageView imgV = t.getImageView();
+                    if  (!chooseRotate)
+                    {
+                    imgV.setFitWidth(Utils.ComputeRatio(imageOriginalWidth, fixedImageWidth, t.getOriginalDentalPieceWidth()));
+                    imgV.setFitHeight(Utils.ComputeRatio(imageOriginalHeight, fixedImageHeight, t.getOriginalDentalPieceHeight()));
+                    imgV.setLayoutX(Utils.ComputeRatio(t.getOriginalImageWidth(), fixedImageWidth, t.getOriginalDentalPieceX()));
+                    imgV.setLayoutY(Utils.ComputeRatio(t.getOriginalImageHeight(), fixedImageHeight, t.getOriginalDentalPieceY()));
+                    }
+                    else if (t.getRotar())
+                    {
+                        if ( getDeltaY > 0)
+                        {
+                            t.setAngulo(t.getAngulo()+10);
+                            imgV.setRotate(t.getAngulo());
+                        }
+                        else
+                        {
+                            t.setAngulo(t.getAngulo()-10);
+                            imgV.setRotate(t.getAngulo());
+                        }
+                    }
                 }
 
-                for(Tooth t : toothList)
+
+                for(Point p : pointsList)
                 {
-                	ImageView imgV = t.getImageView();
-                	if 	(!chooseRotate)
-                	{
-                	imgV.setFitWidth(Utils.ComputeRatio(imageOriginalWidth, fixedImageWidth, t.getOriginalToothWidth()));
-                	imgV.setFitHeight(Utils.ComputeRatio(imageOriginalHeight, fixedImageHeight, t.getOriginalToothHeight()));
-                	imgV.setLayoutX(Utils.ComputeRatio(t.getOriginalImageWidth(), fixedImageWidth, t.getOriginalToothX()));
-                	imgV.setLayoutY(Utils.ComputeRatio(t.getOriginalImageHeight(), fixedImageHeight, t.getOriginalToothY()));
-                	}
-                	else
-                	imgV.setRotate(ang);
+                    Circle cir = p.getCircle();
+
+                    if  (!chooseRotate)
+                    {
+                    cir.setLayoutX(Utils.ComputeRatio(p.getOriginalPointWidth(), fixedImageWidth, p.getOriginalPointX()));
+                    cir.setLayoutY(Utils.ComputeRatio(p.getOriginalPointHeight(), fixedImageHeight, p.getOriginalPointY()));
+                    }
                 }
+
             }
         });
 
         scrollPane.addEventFilter(ScrollEvent.ANY, new EventHandler<ScrollEvent>()
         {
             @Override
-            public void handle(ScrollEvent event) {
-                if (event.getDeltaY() > 0) {
+            public void handle(ScrollEvent event)
+            {
+                if (event.getDeltaY() > 0)
+                {
                     zoomProperty.set(zoomProperty.get() * 1.1);
-                    ang+=10;
-                } else if (event.getDeltaY() < 0) {
+                    getDeltaY=event.getDeltaY();
+                } else if (event.getDeltaY() < 0)
+                {
                     zoomProperty.set(zoomProperty.get() / 1.1);
-                    ang-=10;
+                    getDeltaY=event.getDeltaY();
                 }
             }
         });
@@ -180,32 +223,51 @@ public class MainApp extends Application
         	boolean dragUndetected = e.isDragDetect();
         	if (e.getButton().equals(MouseButton.PRIMARY) && dragUndetected)
         	{
-            	if (this.chooseAddPoint) {
-            		Point point = new Point(e, pointGroup);
-            	} else if (this.chooseAddTooth) {
-            		Tooth tooth = new Tooth(this, e, toothGroup);
-            		toothList.add(tooth);
-            	} else if (this.chooseAddContour) {
+            	if (this.chooseAddPoint)
+                {
+                    Point point = new Point(this, e.getSceneX(), e.getSceneY(), pointGroup);
+                    pointsList.add(point);
+                }
+                else if (this.chooseAddTooth)
+                {
+                    Tooth tooth = new Tooth(this, e.getSceneX(), e.getSceneY(), toothGroup);
+                    dentalPieceList.add(tooth);
+                }
+                else if (this.chooseAddToothS)
+                {
+                    Tooth_S tooths = new Tooth_S(this, e.getSceneX(), e.getSceneY(), toothGroup);
+                    dentalPieceList.add(tooths);
+                }
+                else if (this.chooseAddMolar)
+
+                {
+                    Molar molar = new Molar(this, e.getSceneX(), e.getSceneY(), molarGroup);
+                    dentalPieceList.add(molar);
+                }
+                else if (this.chooseAddMolarS)
+                {
+                    Molar_S molars = new Molar_S(this, e.getSceneX(), e.getSceneY(), molarGroup);
+                    dentalPieceList.add(molars);
+                }
+                else if (this.chooseAddContour) {
             		if(i<14){
-	            		Point point = new Point(e, contourGroup);
+	            		Point point = new Point(this, e.getSceneX(), e.getSceneY(), pointGroup);
 	            		pointListContour.add(point);
 	            		i++;
             		}else{
             			System.out.println(pointListContour);
-            			Contour contorno = new Contour(pointListContour, contourGroup);
-            			//Plot2DPanel plot = new Plot2DPanel();
+            			Contour contorno = new Contour(pointListContour);
 
-						//contorno.pointList = pointListContour;
-						//System.out.println(contorno.xc);
-						//plot.addLinePlot("Interpolacion Spline", contorno.xc, contorno.yc);
+            			int n = contorno.XC.length;
+
+            			Line line;
+            			for (i=0 ; i<n-1 ; i++){
+            				line = new Line(contorno.YC[i], contorno.XC[i], contorno.YC[i+1], contorno.XC[i+1]);
+            				line.setStyle("-fx-stroke: red;");
+            				lines.getChildren().add(line);
+            			}
             			chooseAddContour = false;
             		}
-            	} else if (this.chooseRotate) {
-            		//
-            	} else if (this.chooseSizeDistance) {
-            		// SELECCIONAR DOS PUNTOS Y CALCULAR DISTANCIA
-            	} else if (this.chooseSizeAngle) {
-            		// SELECCIONAR TRES PUNTOS Y CALCULAR ÁNGULO
             	}
             }
         });
@@ -240,6 +302,81 @@ public class MainApp extends Application
     	return imageOriginalHeight;
     }
 
+    public boolean getChooseRotate()
+    {
+        return chooseRotate;
+    }
+
+    public boolean getChooseSizeDistance()
+    {
+        return chooseSizeDistance;
+    }
+
+    public boolean getChooseSizeAngle()
+    {
+        return chooseSizeAngle;
+    }
+
+    public void SetRotateFalse()
+    {
+         for(DentalPiece t : dentalPieceList)
+         {
+             t.setRotar(false);
+         }
+    }
+
+    public void AddPointToComputeDistance(Point p)
+    {
+        double distance = 0;
+
+        if(pointsToComputeDistance.size() == 0)
+        {
+            pointsToComputeDistance.add(p);
+        }
+        else if(pointsToComputeDistance.size() == 1)
+        {
+            pointsToComputeDistance.add(p);
+            distance = pointsToComputeDistance.get(0).ComputeDistance(pointsToComputeDistance.get(1));
+        }
+        else
+        {
+            pointsToComputeDistance.set(0, pointsToComputeDistance.get(1));
+            pointsToComputeDistance.set(1, p);
+            distance = pointsToComputeDistance.get(0).ComputeDistance(pointsToComputeDistance.get(1));
+        }
+
+        distance = Math.round(distance);
+        TextDistance.setPromptText(Double.toString(distance));
+        System.out.println(distance);
+    }
+
+    public void AddPointToComputeAngle(Point p)
+    {
+        double angle = 0;
+
+        if(pointsToComputeAngle.size() < 2)
+        {
+            pointsToComputeAngle.add(p);
+        }
+        else if(pointsToComputeAngle.size() == 2)
+        {
+            pointsToComputeAngle.add(p);
+            angle = pointsToComputeAngle.get(1).ComputeAngle(pointsToComputeAngle.get(0), pointsToComputeAngle.get(2));
+        }
+        else
+        {
+            pointsToComputeAngle.set(0, pointsToComputeAngle.get(1));
+            pointsToComputeAngle.set(1, pointsToComputeAngle.get(2));
+            pointsToComputeAngle.set(2, p);
+            angle = pointsToComputeAngle.get(1).ComputeAngle(pointsToComputeAngle.get(0), pointsToComputeAngle.get(2));
+
+        }
+
+        angle = Math.round(angle);
+        TextAngle.setPromptText(Double.toString(angle));
+        System.out.println(angle);
+    }
+
     EventHandler<ActionEvent> btnLoadEventListener = new EventHandler<ActionEvent>()
     {
         @Override
@@ -268,7 +405,7 @@ public class MainApp extends Application
                 myImageView.setFitHeight(fixedImageHeight);
                 scrollPane.setContent(root);
                 System.out.println(fixedImageWidth + " ; " + fixedImageHeight);
-            } catch (IOException ex)
+                } catch (IOException ex)
             {
                 Logger.getLogger(MainApp.class.getName()).log(Level.SEVERE, null, ex);
             }
@@ -282,11 +419,14 @@ public class MainApp extends Application
         public void handle(ActionEvent t)
         {
             System.out.println("Poner punto");
+            SetRotateFalse();
+            chooseAddMolarS = false;
+            chooseAddToothS = false;
             chooseAddPoint = true;
             chooseAddTooth = false;
+            chooseAddMolar = false;
             chooseAddContour = false;
             chooseRotate = false;
-            chooseDelete = false;
             chooseSizeDistance = false;
             chooseSizeAngle = false;
         }
@@ -297,34 +437,78 @@ public class MainApp extends Application
         @Override
         public void handle(ActionEvent t)
         {
-            System.out.println("Poner muela");
+            System.out.println("Poner diente");
+            SetRotateFalse();
+            chooseAddMolarS = false;
+            chooseAddToothS = false;
             chooseAddPoint = false;
             chooseAddTooth = true;
+            chooseAddMolar = false;
             chooseAddContour = false;
             chooseRotate = false;
-            chooseDelete = false;
             chooseSizeDistance = false;
             chooseSizeAngle = false;
         }
     };
 
-    EventHandler<ActionEvent> btnContourEventListener = new EventHandler<ActionEvent>()
+    EventHandler<ActionEvent> btnToothSEventListener = new EventHandler<ActionEvent>()
     {
         @Override
         public void handle(ActionEvent t)
         {
-            System.out.println("Poner contorno");
-            i = 0;
-
+            System.out.println("Poner diente");
+            SetRotateFalse();
             chooseAddPoint = false;
+            chooseAddToothS = true;
+            chooseAddMolarS = false;
             chooseAddTooth = false;
-            chooseAddContour = true;
+            chooseAddMolar = false;
+            chooseAddContour = false;
             chooseRotate = false;
-            chooseDelete = false;
             chooseSizeDistance = false;
             chooseSizeAngle = false;
         }
     };
+
+    EventHandler<ActionEvent> btnMolarEventListener = new EventHandler<ActionEvent>()
+    {
+        @Override
+        public void handle(ActionEvent t)
+        {
+            System.out.println("Poner molar");
+            SetRotateFalse();
+            chooseAddMolarS = false;
+            chooseAddToothS = false;
+            chooseAddPoint = false;
+            chooseAddTooth = false;
+            chooseAddMolar = true;
+            chooseAddContour = false;
+            chooseRotate = false;
+            chooseSizeDistance = false;
+            chooseSizeAngle = false;
+        }
+    };
+
+    EventHandler<ActionEvent> btnMolarSEventListener = new EventHandler<ActionEvent>()
+    {
+        @Override
+        public void handle(ActionEvent t)
+        {
+            System.out.println("Poner molar");
+            SetRotateFalse();
+            chooseAddMolar = false;
+            chooseAddToothS = false;
+            chooseAddPoint = false;
+            chooseAddTooth = false;
+            chooseAddMolarS = true;
+            chooseAddContour = false;
+            chooseRotate = false;
+            chooseSizeDistance = false;
+            chooseSizeAngle = false;
+        }
+    };
+
+
 
     EventHandler<ActionEvent> btnMoveEventListener = new EventHandler<ActionEvent>()
     {
@@ -332,43 +516,32 @@ public class MainApp extends Application
         public void handle(ActionEvent t)
         {
             System.out.println("Rotar objeto");
-            btnLessAngle.setDisable(false);
-            btnMoreAngle.setDisable(false);
+            chooseAddMolarS = false;
+            chooseAddToothS = false;
             chooseAddPoint = false;
             chooseAddTooth = false;
+            chooseAddMolar = false;
             chooseAddContour = false;
             chooseRotate = true;
-            chooseDelete = false;
             chooseSizeDistance = false;
             chooseSizeAngle = false;
         }
     };
 
-    EventHandler<ActionEvent> btnDeleteEventListener = new EventHandler<ActionEvent>()
-    {
-        @Override
-        public void handle(ActionEvent t) {
-            System.out.println("Borrar objeto");
-            chooseAddPoint = false;
-            chooseAddTooth = false;
-            chooseAddContour = false;
-            chooseRotate = false;
-            chooseDelete = true;
-            chooseSizeDistance = false;
-            chooseSizeAngle = false;
-        }
-    };
 
     EventHandler<ActionEvent> btnDistanceEventListener = new EventHandler<ActionEvent>()
     {
         @Override
         public void handle(ActionEvent t) {
             System.out.println("Distancia");
+            SetRotateFalse();
+            chooseAddMolarS = false;
+            chooseAddToothS = false;
             chooseAddPoint = false;
             chooseAddTooth = false;
+            chooseAddMolar = false;
             chooseAddContour = false;
             chooseRotate = false;
-            chooseDelete = false;
             chooseSizeDistance = true;
             chooseSizeAngle = false;
         }
@@ -380,31 +553,37 @@ public class MainApp extends Application
         public void handle(ActionEvent t)
         {
             System.out.println("Angulo");
+            SetRotateFalse();
+            chooseAddMolarS = false;
+            chooseAddToothS = false;
             chooseAddPoint = false;
             chooseAddTooth = false;
+            chooseAddMolar = false;
             chooseAddContour = false;
             chooseRotate = false;
-            chooseDelete = false;
             chooseSizeDistance = false;
             chooseSizeAngle = true;
         }
     };
 
-    EventHandler<ActionEvent> btnLessAngEventListener = new EventHandler<ActionEvent>()
+    EventHandler<ActionEvent> btnContourEventListener = new EventHandler<ActionEvent>()
     {
         @Override
         public void handle(ActionEvent t)
         {
+            System.out.println("Poner contorno");
+            i = 0;
 
+            chooseAddMolarS = false;
+            chooseAddToothS = false;
+            chooseAddPoint = false;
+            chooseAddTooth = false;
+            chooseAddMolar = false;
+            chooseAddContour = true;
+            chooseRotate = false;
+            chooseSizeDistance = false;
+            chooseSizeAngle = false;
         }
     };
 
-    EventHandler<ActionEvent> btnMoreAngEventListener = new EventHandler<ActionEvent>()
-    {
-        @Override
-        public void handle(ActionEvent t)
-        {
-
-        }
-    };
 }
