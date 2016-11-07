@@ -30,27 +30,33 @@ import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import javax.imageio.ImageIO;
 
+import org.math.plot.Plot2DPanel;
+
 /**
  * Image Editor
  */
 public class MainApp extends Application
 {
 	private int ang = 0;
+	private int i = 0;
 	private double fixedImageWidth = 500;
 	private ImageView myImageView;
     private ScrollPane scrollPane = new ScrollPane();
     final DoubleProperty zoomProperty = new SimpleDoubleProperty(fixedImageWidth/4);
     boolean chooseAddPoint = false;
     boolean chooseAddTooth = false;
+    boolean chooseAddContour = false;
     boolean chooseRotate = false;
     boolean chooseDelete = false;
     boolean chooseSizeDistance = false;
     boolean chooseSizeAngle = false;
     Group root;
     List<Tooth> toothList = new ArrayList<Tooth>();
+    List<Point> pointListContour = new ArrayList<Point>();
     double imageOriginalWidth, imageOriginalHeight, fixedImageHeight;
     Button btnLessAngle = new Button("-");
     Button btnMoreAngle = new Button("+");
+    Group contourGroup = new Group();
 
     @Override
     public void start(Stage primaryStage) throws Exception
@@ -65,6 +71,8 @@ public class MainApp extends Application
         btnAddPoint.setOnAction(btnPointEventListener);
         Button btnAddTooth = new Button("Tooth");
         btnAddTooth.setOnAction(btnToothEventListener);
+        Button btnAddContour = new Button("Contour");
+        btnAddContour.setOnAction(btnContourEventListener);
 
         //Edit options
         Button btnEditRotate = new Button("Rotate");
@@ -93,7 +101,7 @@ public class MainApp extends Application
     	hBoxFile.getChildren().addAll(btnLoad);
     	//Add options
     	HBox hBoxAdd = new HBox(5);
-    	hBoxAdd.getChildren().addAll(btnAddPoint, btnAddTooth);
+    	hBoxAdd.getChildren().addAll(btnAddPoint, btnAddTooth, btnAddContour);
     	//Edit options
     	HBox hBoxEdit = new HBox(5);
     	hBoxEdit.getChildren().addAll(btnEditRotate, btnEditDelete);
@@ -114,7 +122,8 @@ public class MainApp extends Application
         this.root = new Group();
         Group toothGroup = new Group();
         Group pointGroup = new Group();
-        root.getChildren().addAll(myImageView, pointGroup, toothGroup);
+
+        root.getChildren().addAll(myImageView, pointGroup, toothGroup, contourGroup);
 
         Scene scene = new Scene(rootBox, 600, 300);
 
@@ -176,6 +185,21 @@ public class MainApp extends Application
             	} else if (this.chooseAddTooth) {
             		Tooth tooth = new Tooth(this, e, toothGroup);
             		toothList.add(tooth);
+            	} else if (this.chooseAddContour) {
+            		if(i<14){
+	            		Point point = new Point(e, contourGroup);
+	            		pointListContour.add(point);
+	            		i++;
+            		}else{
+            			System.out.println(pointListContour);
+            			Contour contorno = new Contour(pointListContour, contourGroup);
+            			//Plot2DPanel plot = new Plot2DPanel();
+
+						//contorno.pointList = pointListContour;
+						//System.out.println(contorno.xc);
+						//plot.addLinePlot("Interpolacion Spline", contorno.xc, contorno.yc);
+            			chooseAddContour = false;
+            		}
             	} else if (this.chooseRotate) {
             		//
             	} else if (this.chooseSizeDistance) {
@@ -260,6 +284,7 @@ public class MainApp extends Application
             System.out.println("Poner punto");
             chooseAddPoint = true;
             chooseAddTooth = false;
+            chooseAddContour = false;
             chooseRotate = false;
             chooseDelete = false;
             chooseSizeDistance = false;
@@ -275,6 +300,25 @@ public class MainApp extends Application
             System.out.println("Poner muela");
             chooseAddPoint = false;
             chooseAddTooth = true;
+            chooseAddContour = false;
+            chooseRotate = false;
+            chooseDelete = false;
+            chooseSizeDistance = false;
+            chooseSizeAngle = false;
+        }
+    };
+
+    EventHandler<ActionEvent> btnContourEventListener = new EventHandler<ActionEvent>()
+    {
+        @Override
+        public void handle(ActionEvent t)
+        {
+            System.out.println("Poner contorno");
+            i = 0;
+
+            chooseAddPoint = false;
+            chooseAddTooth = false;
+            chooseAddContour = true;
             chooseRotate = false;
             chooseDelete = false;
             chooseSizeDistance = false;
@@ -292,6 +336,7 @@ public class MainApp extends Application
             btnMoreAngle.setDisable(false);
             chooseAddPoint = false;
             chooseAddTooth = false;
+            chooseAddContour = false;
             chooseRotate = true;
             chooseDelete = false;
             chooseSizeDistance = false;
@@ -306,6 +351,7 @@ public class MainApp extends Application
             System.out.println("Borrar objeto");
             chooseAddPoint = false;
             chooseAddTooth = false;
+            chooseAddContour = false;
             chooseRotate = false;
             chooseDelete = true;
             chooseSizeDistance = false;
@@ -320,6 +366,7 @@ public class MainApp extends Application
             System.out.println("Distancia");
             chooseAddPoint = false;
             chooseAddTooth = false;
+            chooseAddContour = false;
             chooseRotate = false;
             chooseDelete = false;
             chooseSizeDistance = true;
@@ -335,6 +382,7 @@ public class MainApp extends Application
             System.out.println("Angulo");
             chooseAddPoint = false;
             chooseAddTooth = false;
+            chooseAddContour = false;
             chooseRotate = false;
             chooseDelete = false;
             chooseSizeDistance = false;

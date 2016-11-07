@@ -10,11 +10,13 @@ import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 
 public class Point {
-	double orgSceneX, orgSceneY, orgTranslateX, orgTranslateY;
+	double orgSceneX, orgSceneY, orgTranslateX, orgTranslateY, x, y;
 
 	public Point(MouseEvent e, Group pointGroup) {
-		Circle circle = new Circle(e.getSceneX(), e.getSceneY() - 42, 5, Color.RED);
+		Circle circle = new Circle(e.getSceneX(), e.getSceneY() - 45, 3, Color.RED);
         circle.setCursor(Cursor.HAND);
+        x = e.getSceneX();
+        y = e.getSceneY() - 45;
 
         // EVENT HANDLERS
         EventHandler<MouseEvent> circleOnMousePressedEventHandler =
@@ -52,5 +54,14 @@ public class Point {
         circle.setOnMouseDragged(circleOnMouseDraggedEventHandler);
         pointGroup.getChildren().add(circle);
 	}
+
+	public double getX() {
+		return x;
+	}
+
+	public double getY() {
+		return y;
+	}
+
 
 }
