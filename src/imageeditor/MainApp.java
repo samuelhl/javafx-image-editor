@@ -192,8 +192,19 @@ public class MainApp extends Application
 
                     if  (!chooseRotate)
                     {
-                    cir.setLayoutX(Utils.ComputeRatio(p.getOriginalPointWidth(), fixedImageWidth, p.getOriginalPointX()));
-                    cir.setLayoutY(Utils.ComputeRatio(p.getOriginalPointHeight(), fixedImageHeight, p.getOriginalPointY()));
+                    cir.setCenterX(Utils.ComputeRatio(p.getOriginalPointWidth(), fixedImageWidth, p.getOriginalPointX()));
+                    cir.setCenterY(Utils.ComputeRatio(p.getOriginalPointHeight(), fixedImageHeight, p.getOriginalPointY()));
+                    }
+                }
+
+                for(Point p : pointListContour)
+                {
+                    Circle cir = p.getCircle();
+
+                    if  (!chooseRotate)
+                    {
+                    cir.setCenterX(Utils.ComputeRatio(p.getOriginalPointWidth(), fixedImageWidth, p.getOriginalPointX()));
+                    cir.setCenterY(Utils.ComputeRatio(p.getOriginalPointHeight(), fixedImageHeight, p.getOriginalPointY()));
                     }
                 }
 

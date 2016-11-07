@@ -3,7 +3,7 @@ import javafx.scene.Group;
 
 public class Tooth_S extends DentalPiece {
 
-	static String imageDir = "src\\image\\DienteS.png";
+	static String imageDir = "src\\resources\\DienteS.png";
 
 	public Tooth_S(MainApp mainApp, double initX, double initY, Group dentalPieceGroup)
 	{

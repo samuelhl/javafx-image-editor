@@ -18,22 +18,26 @@ public class Point {
 	Group pointGroup;
 
 	public Point(MainApp mainApp, double initX, double initY, Group pointGroup) {
-		this.mainApp = mainApp;
-		this.pointGroup = pointGroup;
-		Circle circle = new Circle(initX, initY - 45, 3, Color.RED);
-		circl = circle;
-		originalPointX=initX;
-		originalPointY=initY - 45;
-		appFixedPointWidth = mainApp.getOriginalImageWidth();
-		appFixedPointHeight = mainApp.getOriginalImageHeight();
+        this.mainApp = mainApp;
+        this.pointGroup = pointGroup;
+        Circle circle = new Circle();
+        circle.setRadius(3.0f);
+        circle.setFill(Color.RED);
+        circle.setCenterX(initX);
+        circle.setCenterY(initY - 42);
+        circl = circle;
+        originalPointX=initX;
+        originalPointY=initY - 42;
+        System.out.println(originalPointX  + ", " + originalPointY);
+        appFixedPointWidth = mainApp.getFixedImageWidth();
+        appFixedPointHeight = mainApp.getFixedImageHeight();
         circle.setCursor(Cursor.HAND);
         circle.setOnMousePressed(circleOnMousePressedEventHandler);
         circle.setOnMouseDragged(circleOnMouseDraggedEventHandler);
         pointGroup.getChildren().add(circle);
-
         x = initX;
         y = initY - 45;
-	}
+    }
 
 	public double getOrgSceneX()
     {
